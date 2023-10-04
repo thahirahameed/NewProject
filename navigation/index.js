@@ -1,6 +1,8 @@
-import {} from 'react';
+import {useEffect, useState} from 'react';
 import {} from 'react-native';
+import {PersistanceHelper} from '../helpers';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {EventRegister} from 'react-native-event-listeners';
 
 import {
   TestFlexScreen,
@@ -13,6 +15,29 @@ import {
 const Stack = createNativeStackNavigator();
 
 const Navigator = () => {
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+
+  useEffect(() => {
+    fetchUserEmail();
+
+    let event = EventRegister.addEventListener('LoginEvent', data => {
+      fetchUserEmail();
+    });
+
+    return () => {
+      EventRegister.removeEventListener(event);
+    };
+  }, []);
+
+  const fetchUserEmail = async () => {
+    const userEmail = await PersistanceHelper.getValue('userEmail');
+
+    if (userEmail && userEmail.length > 0) {
+      setIsUserLoggedIn(true);
+    } else {
+      setIsUserLoggedIn(false);
+    }
+  };
   const getMainStack = () => {
     return (
       <Stack.Group>
@@ -52,7 +77,11 @@ const Navigator = () => {
     );
   };
 
-  return <Stack.Navigator>{getAuthStack()}</Stack.Navigator>;
+  return (
+    <Stack.Navigator>
+      {isUserLoggedIn ? getMainStack() : getAuthStack()}
+    </Stack.Navigator>
+  );
 };
 
 export default Navigator;
